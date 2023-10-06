@@ -1,0 +1,1 @@
+powershell -NoExit -Command Set-Location -Path "."

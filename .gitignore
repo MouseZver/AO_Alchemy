@@ -1,0 +1,5 @@
+composer.lock
+vendor
+var/*.jpg
+var/logs/*
+var/images/*

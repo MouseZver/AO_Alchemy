@@ -1,0 +1,17 @@
+<?php
+
+use function App\Foundation\Helpers\{ container };
+
+require 'vendor/autoload.php';
+
+/* $console = new Symfony\Component\Console\Application;
+
+$cli = new App\Kernel\CliKernel; */
+
+$app = ( new App\Foundation\Application( new App\Kernel\CliKernel ) )
+    -> kernel 
+	-> console( new Symfony\Component\Console\Application );
+	
+	//container( \Arduino\Mouse :: class ) -> send ( 'pppppppppppppppp' );
+	
+	$app -> run();
