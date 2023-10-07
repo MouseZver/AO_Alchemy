@@ -1,1 +1,1 @@
-powershell -NoExit -Command Set-Location -Path "."
+powershell -NoExit -Command php console alchemy
