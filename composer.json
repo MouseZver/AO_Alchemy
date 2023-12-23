@@ -2,7 +2,7 @@
     "type": "project",
 	"require": {
         "nouvu/windows-nircmd": "^0.0.1",
-        "nouvu/arduino-mouse-click": "^0.0.1",
+        "nouvu/arduino-mouse-click": "^0.0.2",
         "symfony/console": "^6.3",
         "nouvu/lerma": "^7.2",
         "nouvu/framework": "dev-master",

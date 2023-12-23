@@ -51,6 +51,11 @@ class Kernel implements KernelInterface
 	{
 	    return $this -> getProjectDir() . '/data';
 	}
+	
+	public function getTempDir(): string
+	{
+	    return $this -> getProjectDir() . '/var';
+	}
 
 	public function getCharset(): string
     {

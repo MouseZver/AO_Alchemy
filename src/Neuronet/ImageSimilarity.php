@@ -12,9 +12,9 @@ use function App\Foundation\Helpers\{ app };
 
 class ImageSimilarity
 {
-    private const SIMILAR_PERCENT = 90;
-    
-    private array $result = [], $similar = [];
+	private const SIMILAR_PERCENT = 90;
+	
+	private array $result = [], $similar = [];
 	
 	private int $width, $height;
 	
@@ -25,13 +25,13 @@ class ImageSimilarity
 	private bool $createDirectory = false, $setTables = false;
 	
 	private ContainerInterface $container;
-    
+	
 	public function __construct ()
 	{}
 	
 	public function getName(): string
 	{
-	    return \NeuralNetworkImages :: class;
+		return \NeuralNetworkImages :: class;
 	}
 	
 	public function setContainer( ContainerInterface $container ): void
@@ -42,8 +42,8 @@ class ImageSimilarity
 	public function boot(): void
 	{
 		$this -> setDirectoryData( $this -> container -> get( 'kernel' ) -> getDataDir() );
-	    
-	    $this -> createDirectoryData();
+		
+		$this -> createDirectoryData();
 	}
 	
 	public function setTables(): void
@@ -53,6 +53,33 @@ class ImageSimilarity
 			ISimDataService :: createTables();
 			
 			$this -> setTables = true;
+		}
+	}
+	
+	public function setDirectoryData( string $directory ): void
+	{
+		$r = new \ReflectionObject( $this );
+		
+		$this -> directory = $directory . sprintf ( '/%s/data', $r -> getShortName() );
+	}
+	
+	public function setDirectoryApp( string $app ): void
+	{
+		$this -> directory .= DIRECTORY_SEPARATOR . $app;
+	}
+	
+	public function getDirectoryData(): ?string
+	{
+		return $this -> directory;
+	}
+	
+	public function createDirectoryData(): void
+	{
+		if ( ! $this -> createDirectory && ! file_exists ( $this -> getDirectoryData() ) )
+		{
+			mkdir ( $this -> getDirectoryData(), 0777, true );
+			
+			$this -> createDirectory = true;
 		}
 	}
 	
@@ -66,7 +93,7 @@ class ImageSimilarity
 		
 		$ImSim -> build( $im, $separate, $width, $height, $iterator, $movement );
 	 */
-	public function build( \GDImage $im, array $separate, int $width, int $height, \Closure $iterator, \Closure $movement = null, \Closure $filter = null, int $brightness = 128, bool $createData = true ): void
+	public function build( \GDImage $im, array $separate, int $width, int $height, \Closure $iterator, \Closure $movement = null, \Closure | array $filter = [], int $brightness = 128, bool $createData = true ): void
 	{
 		$this -> setTables();
 		
@@ -80,9 +107,9 @@ class ImageSimilarity
 			
 			if ( ! $this -> identification( $hash ) )
 			{
-				$series = $this -> learn( $image, $hash, $points );
+				$data = $this -> learn( $image, $hash, $points );
 				
-				$this -> setData( $image, $hash, $points, $series, $createData );
+				$this -> setData( $image, $hash, $points, $data, $createData );
 			}
 			
 			$this -> storage( $image, $hash );
@@ -107,17 +134,17 @@ class ImageSimilarity
 	
 	public function filterFillArea( int $x, int $y, int $width, int $height, int $color ): \Closure
 	{
-	    return static function ( array &$result ) use ( $x, $y, $width, $height, $color ): void
-	    {
-	        $areaX = $x <= $result['x'] && $result['x'] <= ( $x + $width );
-	        
-	        $areaY = $y <= $result['y'] && $result['y'] <= ( $y + $height );
-	        
-	        if ( $areaX && $areaY )
-	        {
-	            $result['color'] = $color;
-	        }
-	    };
+		return static function ( array &$result ) use ( $x, $y, $width, $height, $color ): void
+		{
+			$areaX = $x <= $result['x'] && $result['x'] <= ( $x + $width );
+			
+			$areaY = $y <= $result['y'] && $result['y'] <= ( $y + $height );
+			
+			if ( $areaX && $areaY )
+			{
+				$result['color'] = $color;
+			}
+		};
 	}
 	
 	public function iteratorСonvertToBlackAndWhite(): \Closure
@@ -147,7 +174,7 @@ class ImageSimilarity
 		};
 	}
 	
-	public function createParticlesData( \GDImage $im, array $separate, \Closure $iterator, \Closure $movement = null, \Closure $filter = null, int $brightness = 128 ): Iterable
+	public function createParticlesData( \GDImage $im, array $separate, \Closure $iterator, \Closure $movement = null, \Closure | array $filter = [], int $brightness = 128 ): Iterable
 	{
 		foreach ( $separate AS [ $x, $y ] )
 		{
@@ -159,12 +186,17 @@ class ImageSimilarity
 			{
 				if ( $movement instanceof \Closure )
 				{
-				    $movement( $result, $x, $y );
+					$movement( $result, $x, $y );
 				}
 				
-				if ( $filter instanceof \Closure )
+				if ( ! is_array ( $filter ) )
 				{
-				    $filter( $result );
+					$filter = [ $filter ];
+				}
+				
+				foreach ( $filter AS $f )
+				{
+					$f( $result );
 				}
 				
 				$points .= $result['color'] ? 1 : 0;
@@ -186,38 +218,40 @@ class ImageSimilarity
 		return md5 ( $points );
 	}
 	
-	public function learn( \GDImage $image, string $hash, string $points, int | float $similar_percent = self :: SIMILAR_PERCENT ): ?string
+	public function learn( \GDImage $image, string $hash, string $points, int | float $similar_percent = self :: SIMILAR_PERCENT ): ?array
 	{
 		foreach ( $this -> dataIteratorByCategory( $this -> getCategory() ) AS [ 'series' => $series, 'data' => $data ] )
 		{
-		    similar_text ( $data, $points, $percent );
-		    
-		    if ( $percent >= $similar_percent )
-		    {
-		        $this -> similar[ ( string ) $percent ] = $series;
-		    }
+			similar_text ( $data, $points, $percent );
+			
+			if ( $percent >= $similar_percent )
+			{
+				$this -> similar[ ( string ) $percent ] = $series;
+			}
 		}
 		
 		if ( empty ( $this -> similar ) )
 		{
-		    return null;
+			return null;
 		}
 		
 		ksort ( $this -> similar );
 		
 		$series = end ( $this -> similar );
 		
+		$percent = array_key_last ( $this -> similar );
+		
 		$this -> similar = [];
 		
-		return $series;
+		return compact ( 'percent', 'series' );
 	}
 	
-	public function setData( \GDImage $image, string $hash, string $points, ?string $similar_series, bool $createData = true ): void
+	public function setData( \GDImage $image, string $hash, string $points, ?array $data, bool $createData = true ): void
 	{
-	    if ( isset ( $similar_series ) )
+		if ( isset ( $data ) )
 		{
-		    $this -> addData( $image, $similar_series, $hash, $points );
-        }
+			$this -> addData( $image, $data, $hash, $points );
+		}
 		else if ( $createData )
 		{
 			$this -> createData( $image, $hash, $points );
@@ -230,58 +264,38 @@ class ImageSimilarity
 		
 		while ( $values = $stmt -> get( StatementInterface :: FETCH_ASSOC ) )
 		{
-		    yield $values;
+			yield $values;
 		}
 	}
 	
-	public function addData( \GDImage $image, string $similar_series, string $hash, string $points ): void
+	public function addData( \GDImage $image, array $data, string $hash, string $points ): void
 	{
 		ISimDataService :: insertImageData( 
-			$similar_series,
+			$data,
 			$hash,
 			$this -> getCategory(),
 			$points
 		);
 		
-		imagepng ( $image, $this -> getDirectoryData() . sprintf ( '/%s/%s/%s.png', $this -> getCategory(), $similar_series, $hash ) );
+		imagepng ( $image, $this -> getDirectoryData() . sprintf ( '/%s/%s/%s.png', $this -> getCategory(), $data['series'], $hash ) );
 	}
 	
 	public function createData( \GDImage $image, string $hash, string $points ): void
 	{
+		$percent = 0;
+		
 		$series = $this -> createSeries();
 		
 		ISimDataService :: insertNamesData( $series, $this -> unknown );
 		
 		mkdir ( $this -> getDirectoryData() . sprintf ( '/%s/%s', $this -> getCategory(), $series ), 0777, true );
 		
-		$this -> addData( $image, $series, $hash, $points );
+		$this -> addData( $image, compact ( 'series', 'percent' ), $hash, $points );
 	}
 	
 	public function createSeries(): string
 	{
 		return ( string ) microtime ( true ) . md5 ( ( string ) mt_rand ( 1000, 9999 ) );
-	}
-	
-	public function createDirectoryData(): void
-	{
-	    if ( ! $this -> createDirectory && ! file_exists ( $this -> getDirectoryData() ) )
-		{
-			mkdir ( $this -> getDirectoryData(), 0777, true );
-			
-			$this -> createDirectory = true;
-		}
-	}
-	
-	public function setDirectoryData( string $directory ): void
-	{
-	    $r = new \ReflectionObject( $this );
-		
-		$this -> directory = $directory . sprintf ( '/%s/data', $r -> getShortName() );
-	}
-	
-	public function getDirectoryData(): ?string
-	{
-		return $this -> directory;
 	}
 	
 	public function setSize( int $width, int $height ): void
@@ -302,8 +316,8 @@ class ImageSimilarity
 	
 	public function storage( \GDImage $image, string $hash ): void
 	{
-	    imagedestroy ( $image );
-	    
+		imagedestroy ( $image );
+		
 		$this -> result[] = ISimDataService :: findNameByHashAndCategory( $hash, $this -> getCategory() );
 	}
 	

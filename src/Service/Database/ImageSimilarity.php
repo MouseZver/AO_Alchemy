@@ -27,6 +27,7 @@ class ImageSimilarity
 			CREATE TABLE IF NOT EXISTS %s(
 				id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 				series TEXT, 
+				percent TEXT,
 				hash TEXT, 
 				category TEXT, 
 				data TEXT
@@ -38,10 +39,11 @@ class ImageSimilarity
 		return database() -> query( [ 'SELECT series, data FROM %s WHERE category = "%s"', config( 'database.prefix' ) . self :: DATA_TABLE, $category ] );
 	}
 	
-	public static function insertImageData( string $similar_series, string $hash, string $category, string $points ): void
+	public static function insertImageData( array $data, string $hash, string $category, string $points ): void
 	{
-		database() -> prepare( [ 'INSERT INTO %s( series, hash, category, data ) VALUES ( ?, ?, ?, ? )', config( 'database.prefix' ) . self :: DATA_TABLE ], [
-			$similar_series,
+		database() -> prepare( [ 'INSERT INTO %s( series, percent, hash, category, data ) VALUES ( ?, ?, ?, ?, ? )', config( 'database.prefix' ) . self :: DATA_TABLE ], [
+			$data['series'],
+			$data['percent'],
 			$hash,
 			$category,
 			$points

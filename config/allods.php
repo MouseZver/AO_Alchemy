@@ -4,7 +4,7 @@ return [
     'LibreAlchemy' => [
 		'startSeconds' => 15, // Отсчет перед запуском
 		'modsLogPath' => 'A:\Games\Аллоды Онлайн\Personal\Logs\mods.txt', // Абсолютный путь до лог файла
-        'screenArea' => [ // Скриншот области дисплея
+        'screenArea' => [ // Скриншот области дисплея [ x, y, width, height ]
 			'OnAlchemyReactionFinished' => [ 882, 434, 38, 123 ], // Область результата предметов после варки и корректировки 5/5
 			'ingredients' => [ 534, 308, 246, 33 ], // область компонентов 5 ячеек
 			'checkStart' => [ 650, 694, 21, 21 ], // область галочки 'повторять'
@@ -28,10 +28,10 @@ return [
 		    'checkUIAlchemy' => false,
 		    'checkReady' => false,
 		    'ingredients' => true,
-		    'reactionFinished' => true,
+		    'reactionFinished' => false,
         ],
     ],
 	'arduino' => [
-		'com' => 5 // USB Port
+		'com' => 6 // USB Port
 	],
 ];
