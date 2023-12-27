@@ -28,7 +28,7 @@ class SessionAlchemy
 		}
 		else 
 		{
-			$sessions = json_decode ( file_get_contents ( $this -> sessionFile ), true );
+			$sessions = json_decode ( file_get_contents ( $this -> sessionFile ) );
 			
 			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array ( $sessions ) )
 			{
@@ -50,21 +50,17 @@ class SessionAlchemy
 	{
 		$rows = function (): iterable
 		{
-			foreach ( $this -> sessions AS $id => [ 
-				'potionsList' => $potionsList, 
-				'countReaction' => $countReaction,
-				'sorting' => $sorting
-			] )
+			foreach ( $this -> sessions AS $id => $sess )
 			{
 				yield from [
 					[ new TableCell( 'ID Session: ' . ( $id + 1 ), [ 'colspan' => 2 ] ) ],
 					new TableSeparator(),
 					...array_map ( 
-						fn ( array $o ): array => [ 'Выбранное зелье:', sprintf ( '(%d) %s', $o['level'], $o['name'] ) ],
-						$potionsList
+						fn ( object $o ): array => [ 'Выбранное зелье:', sprintf ( '(%d) %s', $o -> level, $o -> name ) ],
+						$sess -> potionsList
 					),
-					[ 'Кол-во реакций:', $countReaction ],
-					[ 'Оптимизированная сортировка:', ( $sorting ? 'Yes' : 'No' ) ]
+					[ 'Кол-во реакций:', $sess -> countReaction ],
+					[ 'Оптимизированная сортировка:', ( $sess -> sorting ? 'Yes' : 'No' ) ]
 				];
 			}
 		};
@@ -78,7 +74,7 @@ class SessionAlchemy
 	
 	public function getData( int $id ): array
 	{
-		return $this -> sessions[$id] ?? throw new AlchemyException( 'Отсутствует сессия с номером: ' . ( $id + 1 ) );
+		return ( array ) $this -> sessions[$id] ?? throw new AlchemyException( 'Отсутствует сессия с номером: ' . ( $id + 1 ) );
 	}
 	
 	public function save( array $data ): void
